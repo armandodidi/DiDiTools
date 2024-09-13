@@ -1,0 +1,8 @@
+env/
+menus/
+images/
+jsons/
+*.xls
+*.xlsx
+*.pdf
+*.csv
