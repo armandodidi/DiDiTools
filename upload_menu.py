@@ -88,8 +88,7 @@ class CreateJSON:
                 category_counter_id += 1
             product_counter += 1
         
-        print(f'jsons/{brandname}.json')
-        with open(f"jsons/{brandname}.json", "w", encoding='utf-8') as outfile:
+        with open(f"{brandname}.json", "w", encoding='utf-8') as outfile:
             outfile.write(json.dumps(json_base, indent=4, ensure_ascii=False))
         
         return json_base
@@ -194,6 +193,8 @@ class ValidateFile:
         return cls.__haserrors__
 
 class UploadMenu:
+    results = []
+
     @classmethod
     def refreshAuthToken(cls, app_id, app_secret, app_shop_id):
         url = f'https://openapi.didi-food.com/v1/auth/authtoken/refresh?app_id={app_id}&app_secret={app_secret}&app_shop_id={app_shop_id}'
@@ -217,22 +218,27 @@ class UploadMenu:
             'Accept': 'application/json'
         }
         response = requests.request('POST', url, headers=headers, data=payload)
-        print(response.json())
-        return response
+        return response.json()
     
     @classmethod
     def uploadStock(cls):
         pass
 
     @classmethod
-    def run(cls, brandname, df, app_id, app_secret, app_shop_id):
-        cls.refreshAuthToken(app_id, app_secret, app_shop_id)
-        token = cls.getAuthToken(app_id, app_secret, app_shop_id)
-        if not token:
-            raise ValueError(f'Error al obtener el token de la tienda: {app_shop_id}')
-        json_menu = CreateJSON.run(brandname, df)
-        json_menu['auth_token'] = token
-        cls.uploadMenu(json_menu)
+    def run(cls, brandname, df, app_id, app_secret, app_shop_ids):
+        app_shop_ids = app_shop_ids.split(',')
+        for app_shop_id in app_shop_ids:
+            cls.refreshAuthToken(app_id, app_secret, app_shop_id)
+            token = cls.getAuthToken(app_id, app_secret, app_shop_id)
+            if not token:
+                raise ValueError(f'Error al obtener el token de la tienda: {app_shop_id}')
+            json_menu = CreateJSON.run(brandname, df)
+            json_menu['auth_token'] = token
+            cls.results.append(cls.uploadMenu(json_menu))
+        
+        with open(f"results.json", "w", encoding='utf-8') as outfile:
+            outfile.write(json.dumps(cls.results, indent=4, ensure_ascii=False))
+        
 
 class UploadMenuAndStock:
     @classmethod
@@ -258,16 +264,16 @@ class UploadMenuAndStock:
         tk_root.geometry('300x300')
         
         # Variables para almacenar los valores de los campos
-        app_id_var = StringVar(value="5764607640045355814")
-        app_secret_var = StringVar(value="2c3fcc0094e5fdc5efe44fb2bdd4a007")
-        shop_id_var = StringVar(value="404")
+        app_id_var = StringVar(value="5764607587180348300")
+        app_secret_var = StringVar(value="41d85f26b0567b6ffb8c355a4d462367")
+        shop_ids_var = StringVar(value="Fresh01,GuiaCereza01,FarmaExpress01,LibreriaU01")
         
         def submit_form():
             nonlocal submitted_values
             submitted_values = {
                 "app_id": app_id_var.get(),
                 "app_secret": app_secret_var.get(),
-                "app_shop_id": shop_id_var.get(),
+                "app_shop_ids": shop_ids_var.get(),
             }
             tk_root.destroy()  # Cerrar ventana
         
@@ -280,7 +286,7 @@ class UploadMenuAndStock:
         Entry(tk_root, textvariable=app_secret_var).pack()
 
         Label(tk_root, text='Shop IDs:').pack(pady=5)
-        Entry(tk_root, textvariable=shop_id_var).pack()
+        Entry(tk_root, textvariable=shop_ids_var).pack()
         
         Button(tk_root, text='Register', command=submit_form).pack(pady=5)
         
