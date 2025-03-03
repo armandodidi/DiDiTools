@@ -7,11 +7,12 @@ from io import BytesIO
 
 
 class DownloadAndFormatImages:
-    FILE_NAME = "Cencosud"
-    BRAND_NAME = "Cencosud"
-    IMAGE_COLUMN_NAME = "URL"
-    EAN_COLUMN_NAME = "UPC"
-    SIZE = (300, 300)
+    FILE_NAME = "CencoMascotas"
+    BRAND_NAME = "CencoMascotas"
+    IMAGE_COLUMN_NAME = "IMAGE"
+    EAN_COLUMN_NAME = "EAN"
+    SIZE = (600, 600)
+    MISSING_IMAGES = []
     
     #############################
     # DO NOT EDIT THE NEXT VALUES
@@ -77,11 +78,16 @@ class DownloadAndFormatImages:
 
     @classmethod
     def download_image(cls, ean, url):
-        response = requests.get(f"https://{url}")
+        try:
+            response = requests.get(f"https://{url}")
+        except Exception:
+            return None
         # response = requests.get(url=url)
+        print(response.status_code)
         if response.status_code == 200:
             return Image.open(BytesIO(response.content))
-        print(f"Not image found for eam: {ean}")
+        # print(f"Not image found for eam: {ean}")
+        cls.MISSING_IMAGES.append(ean)
         return None
 
     @classmethod
@@ -89,11 +95,11 @@ class DownloadAndFormatImages:
         print("-----------------------------------------")
         print("           1. Formatting images          ")
         print("-----------------------------------------")
-        df = pd.read_excel(f"menus/{cls.FILE_NAME}.xlsx", sheet_name=0)
+        df = pd.read_excel(f"menus/{cls.FILE_NAME}.xlsx")
+        # df.to_excel(f"menus/{cls.FILE_NAME}.xlsx")
         null_df = df.isnull()
 
-        # for i in range(0, len(df.index)):
-        for i in range(20000, 30000):
+        for i in range(0, len(df.index)):
             ean = df[cls.EAN_COLUMN_NAME][i]
             image_url = None if null_df[cls.IMAGE_COLUMN_NAME][i] else df[cls.IMAGE_COLUMN_NAME][i]
             image = cls.download_image(ean, image_url) if image_url else None
@@ -103,7 +109,8 @@ class DownloadAndFormatImages:
                     cls.resize_image(image, f"{cls.IMAGE_FOLDER}{ean}.jpg", cls.SIZE)
                 except Exception:
                     print(f"Error with image of the UPC: {ean}")
-
+        print("Missing images:")
+        print(cls.MISSING_IMAGES)
         print("-----------------------------------------")
         print("           2. Ending processing          ")
         print("-----------------------------------------")

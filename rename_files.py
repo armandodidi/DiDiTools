@@ -1,19 +1,20 @@
 import os
+import re
 from PIL import Image
 # specify the directory path
 # dir_path = "./localsite/auxapp/static"
-dir_path = "./images/Glucloud"
+dir_path = "./images/Supernat"
 size = (300, 300)
 
 def rename_images_in_directory(dir_path):
     # loop through all files in the directory
     for filename in os.listdir(dir_path):
         # check if the file is a text file
-        if filename.endswith(".png"):
+        if filename.endswith(".jpg"):
             # construct the old file path
             old_file_path = os.path.join(dir_path, filename)
             # construct the new file name
-            new_file_name = filename.replace("/", "").replace("_", "").replace(" ", "").replace("´", "")
+            new_file_name = re.search('[0-9]{4}', filename).group() + ".jpg"
             # construct the new file path
             new_file_path = os.path.join(dir_path, new_file_name)
             # rename file
@@ -67,6 +68,6 @@ def convert_all_jpgs_in_directory(dir_path):
             convert_jpg_to_png(jpg_path, png_path)
 
 
-resize_images_in_directory(dir_path, size)
-convert_all_jpgs_in_directory(dir_path)
-# rename_images_in_directory(dir_path)
+# resize_images_in_directory(dir_path, size)
+# convert_all_jpgs_in_directory(dir_path)
+rename_images_in_directory(dir_path)

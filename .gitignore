@@ -6,3 +6,8 @@ jsons/
 *.xlsx
 *.pdf
 *.csv
+build/
+.ipynb_checkpoints/
+dist/
+*.ipynb
+.spec
